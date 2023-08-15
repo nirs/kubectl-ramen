@@ -5,7 +5,8 @@ SPDX-License-Identifier: Apache-2.0
 
 # kubectl-ramen
 
-The kubectl ramen plugin provide high level commands for managing ramen.
+The kubectl ramen plugin provides high level commands for managing
+[Ramen](https://github.com/RamenDR/ramen).
 
 ## Commands
 
