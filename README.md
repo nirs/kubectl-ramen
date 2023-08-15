@@ -14,9 +14,9 @@ The kubectl ramen plugin provide high level commands for managing ramen.
 - `undeploy` - undeploy ramen in a clusterset
 - `enable` - enable DR for an OCM managed workload
 - `disable` - disable DR for an OCM managed workload
-- failover - failover DR enabled workload to another cluster in the
+- `failover` - failover DR enabled workload to another cluster in the
   clusterset.
-- relocate - relocate DR enabled workload to another cluster in the
+- `relocate` - relocate DR enabled workload to another cluster in the
   clusterset.
 - `status` - print the status of a ramen protected workload in a
   clusterset.
