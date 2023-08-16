@@ -38,7 +38,7 @@ created from the hub and the managed clusters
 )
 
 func init() {
-	// Sorting flags messes up the help test.
+	// Sorting flags messes up the help text.
 	Command.Flags().SortFlags = false
 
 	Command.Flags().StringVar(&hubKubeconfig, "hub", "", "hub kubeconfig file")
