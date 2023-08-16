@@ -49,9 +49,9 @@ var (
 
 var (
 	rootCommand = &cobra.Command{
-		// TODO: Cannot use "kubectl ramen" since only first word is usage as
-		// the command name.
-		Use:     "ramen",
+		// NOTE: using No-Break-Space (U+00A0) since only the first word
+		// is considered as the command name.
+		Use:     "kubectl\u00A0ramen",
 		Short:   "The kubectl ramen plugin manages Ramen DR",
 		Example: strings.Trim(fmt.Sprintf(example, "kubectl ramen"), "\n"),
 	}
