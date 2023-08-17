@@ -5,7 +5,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/nirs/kubectl-ramen/core"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +18,17 @@ var clustersetCmd = &cobra.Command{
 that can be used later with the --clusterset option.`,
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("fake-clusterset")
+		store := core.DefaultConfigStorage()
+
+		clustersets, err := store.ListClusterSets()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Cannot list clustersets: %s\n", err)
+			os.Exit(1)
+		}
+
+		for _, name := range clustersets {
+			fmt.Println(name)
+		}
 	},
 }
 
