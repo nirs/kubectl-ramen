@@ -14,24 +14,6 @@ import (
 	"github.com/nirs/kubectl-ramen/core"
 )
 
-func tmpdir(t *testing.T) string {
-	path, err := os.MkdirTemp("", "kubectl-ramen.tmp")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Cleanup(func() {
-		err := os.RemoveAll(path)
-		if err != nil {
-			// Nothing we can do here expect logging. The test runner will have
-			// to clean up manually.
-			t.Logf("Cannot remove temporary directory %q: %s", path, err)
-		}
-	})
-
-	return path
-}
-
 func mkdir(t *testing.T, path string, perm fs.FileMode) {
 	err := os.Mkdir(path, perm)
 	if err != nil {
@@ -41,19 +23,19 @@ func mkdir(t *testing.T, path string, perm fs.FileMode) {
 
 func TestConfigNoConfigDir(t *testing.T) {
 	// ~/.config/kubectl-ramen/ does not exist.
-	configDir := filepath.Join(tmpdir(t), "missing")
+	configDir := filepath.Join(t.TempDir(), "missing")
 	checkEmptyConfig(t, configDir)
 }
 
 func TestConfigNoClustersetsDir(t *testing.T) {
 	// ~/.config/kubectl-ramen/clustersets does not exist.
-	configDir := tmpdir(t)
+	configDir := t.TempDir()
 	checkEmptyConfig(t, configDir)
 }
 
 func TestConfigNoClusterSet(t *testing.T) {
 	// ~/.config/kubectl-ramen/clustersets is empty.
-	configDir := tmpdir(t)
+	configDir := t.TempDir()
 	clustersetsDir := filepath.Join(configDir, "clustersets")
 	mkdir(t, clustersetsDir, 0777)
 	checkEmptyConfig(t, configDir)
@@ -61,7 +43,7 @@ func TestConfigNoClusterSet(t *testing.T) {
 
 func TestConfigSomeInvalidClusterSets(t *testing.T) {
 	// ~/.config/kubectl-ramen/clustersets contains some (invalid) clustersets.
-	configDir := tmpdir(t)
+	configDir := t.TempDir()
 	clustersetsDir := filepath.Join(configDir, "clustersets")
 	mkdir(t, clustersetsDir, 0777)
 
