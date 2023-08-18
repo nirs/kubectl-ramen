@@ -25,23 +25,23 @@ var (
   # Enable DR for application "busybox-sample"
   kubectl ramen enable --clusterset rdr --namespace busybox-sample
 
-  # Get application "busybox-sample"
+  # Print application "busybox-sample" status
   kubectl ramen status --clusterset rdr --namespace busybox-sample
 
-  # Watch application status
+  # Watch application "busybox-sample" status
   kubectl ramen status --clusterset rdr --namespace busybox-sample --watch
 
-  # Failover application to the second cluster
+  # Failover application to the other managed cluster
   kubectl ramen failover --clusterset rdr --namespace busybox-sample
 
-  # Relocate application to the second cluster
+  # Relocate application to the other managed cluster
   kubectl ramen relocate --clusterset rdr --namespace busybox-sample
 
   # Disable DR for the busybox-sample application
   kubectl ramen disable --clusterset rdr --namespace busybox-sample
 
   # Undeploy ramen in clusterset "rdr"
-  kubectl ramen undeploy --clusterset rdr --namespace busybox-sample`
+  kubectl ramen undeploy --clusterset rdr`
 )
 
 var rootCmd = &cobra.Command{
