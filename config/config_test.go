@@ -171,3 +171,34 @@ func TestConfigRemoveExisting(t *testing.T) {
 		t.Fatalf("Expected %v, got %v", expected, clustersets)
 	}
 }
+
+// Validating names
+
+var invalidNames = []struct {
+	description string
+	value       string
+}{
+	{"empty", ""},
+	{"hidden", "."},
+	{"absolute path", "/a"},
+	{"multiple path components", "a/b"},
+	{"outside clusteersets dir", "../b"},
+	{"path manipulations", "a/../b"},
+	{"newline", "a\nb"}, // breaks list output in text mode
+}
+
+func TestConfigRemoveInvalid(t *testing.T) {
+	configDir := mkclustersets(t)
+	s := config.NewStore(configDir)
+
+	for _, n := range invalidNames {
+		t.Run(n.description, func(t *testing.T) {
+			err := s.RemoveClusterSet(n.value)
+			if err == nil {
+				t.Fatalf("Removing invalid name %q did not fail", n.value)
+			} else {
+				t.Logf("expected error: %s", err)
+			}
+		})
+	}
+}

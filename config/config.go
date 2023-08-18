@@ -4,8 +4,10 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"k8s.io/client-go/util/homedir"
 )
@@ -53,6 +55,9 @@ func (s *Store) ListClusterSets() ([]string, error) {
 }
 
 func (s *Store) RemoveClusterSet(name string) error {
+	if !s.isValidName(name) {
+		return fmt.Errorf("invalid clusterset name: %q", name)
+	}
 	clustersetDir := filepath.Join(s.clustersetsDir(), name)
 	return os.RemoveAll(clustersetDir)
 }
@@ -61,3 +66,19 @@ func (s *Store) clustersetsDir() string {
 	return filepath.Join(s.path, "clustersets")
 }
 
+// forbiddenCharacters cannot be used in clusterset name.
+var forbiddenCharacters = string([]rune{os.PathSeparator, '\n'})
+
+// isValidName return true if name can be used for storing items.
+func (s *Store) isValidName(name string) bool {
+	if name == "" {
+		return false
+	}
+	if strings.ContainsAny(name, forbiddenCharacters) {
+		return false
+	}
+	if name[0] == '.' {
+		return false
+	}
+	return true
+}
