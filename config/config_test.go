@@ -15,6 +15,8 @@ import (
 	"github.com/nirs/kubectl-ramen/config"
 )
 
+// Helpers for creating configurations
+
 func mkdir(t *testing.T, path string, perm fs.FileMode) {
 	err := os.Mkdir(path, perm)
 	if err != nil {
@@ -52,6 +54,8 @@ func mkclustersets(t *testing.T, names ...string) string {
 
 	return configDir
 }
+
+// Listing clustersets
 
 func TestConfigNoConfigDir(t *testing.T) {
 	// ~/.config/kubectl-ramen/ does not exist.
