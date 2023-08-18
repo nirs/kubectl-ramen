@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nirs/kubectl-ramen/core"
+	"github.com/nirs/kubectl-ramen/config"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +18,7 @@ var clustersetCmd = &cobra.Command{
 that can be used later with the --clusterset option.`,
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		store := core.DefaultConfigStorage()
+		store := config.DefaultStore()
 
 		clustersets, err := store.ListClusterSets()
 		if err != nil {

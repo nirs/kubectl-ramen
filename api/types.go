@@ -12,6 +12,16 @@ const (
 	MetroDR    = DRTopology("metro-dr")
 )
 
+type ClusterConfig struct {
+	Kubeconfig string `yaml:"kubeconfig"`
+}
+
+type ClusterSetConfig struct {
+	Name     string                    `yaml:"name"`
+	Topology DRTopology                `yaml:"topology"`
+	Clusters map[string]*ClusterConfig `yaml:"clusters"`
+}
+
 type Cluster struct {
 	name   string
 	client *kubernetes.Interface
