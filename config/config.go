@@ -32,11 +32,9 @@ func NewStore(path string) *Store {
 // ListClusterSets return slice of clusterset names. The result may contain
 // invalid configurations.
 func (s *Store) ListClusterSets() ([]string, error) {
-	clustersetsDir := filepath.Join(s.path, "clustersets")
-
 	var clustersets []string
 
-	entries, err := os.ReadDir(clustersetsDir)
+	entries, err := os.ReadDir(s.clustersetsDir())
 	if err != nil {
 		if os.IsNotExist(err) {
 			// Expected: nothing was stored yet, or user deleted the directory.
@@ -53,3 +51,7 @@ func (s *Store) ListClusterSets() ([]string, error) {
 
 	return clustersets, nil
 }
+func (s *Store) clustersetsDir() string {
+	return filepath.Join(s.path, "clustersets")
+}
+
