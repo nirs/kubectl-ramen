@@ -5,7 +5,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/nirs/kubectl-ramen/config"
 	"github.com/spf13/cobra"
 )
 
@@ -14,8 +16,11 @@ var removeCmd = &cobra.Command{
 	Short: "Remove a clusterset",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if verbose {
-			fmt.Printf("Removed clusterset %q\n", args[0])
+		store := config.DefaultStore()
+		err := store.RemoveClusterSet(args[0])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Cannot remove clusterset: %s\n", err)
+			os.Exit(1)
 		}
 	},
 }
