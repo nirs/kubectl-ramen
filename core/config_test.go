@@ -78,6 +78,19 @@ func TestConfigSomeInvalidClusterSets(t *testing.T) {
 	}
 }
 
+func TestConfigListError(t *testing.T) {
+	// ~/.config/kubctl-ramen/clustersets is not readable
+	configDir := t.TempDir()
+	clustersetsDir := filepath.Join(configDir, "clustersets")
+	mkdir(t, clustersetsDir, 0) // Not readble
+
+	s := core.NewConfigStorage(configDir)
+	_, err := s.ListClusterSets()
+	if err == nil {
+		t.Fatal("Expected permission error listing unreadable clustersets")
+	}
+}
+
 func TestConfigDefault(t *testing.T) {
 	// We don't know if we have some config, but we can test that we get a
 	// config that we can query without errors.
