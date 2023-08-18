@@ -37,7 +37,7 @@ func TestConfigNoClusterSet(t *testing.T) {
 	// ~/.config/kubectl-ramen/clustersets is empty.
 	configDir := t.TempDir()
 	clustersetsDir := filepath.Join(configDir, "clustersets")
-	mkdir(t, clustersetsDir, 0777)
+	mkdir(t, clustersetsDir, 0700)
 	checkEmptyConfig(t, configDir)
 }
 
@@ -45,13 +45,13 @@ func TestConfigSomeInvalidClusterSets(t *testing.T) {
 	// ~/.config/kubectl-ramen/clustersets contains some (invalid) clustersets.
 	configDir := t.TempDir()
 	clustersetsDir := filepath.Join(configDir, "clustersets")
-	mkdir(t, clustersetsDir, 0777)
+	mkdir(t, clustersetsDir, 0700)
 
 	expected := []string{"cs1", "cs2", "cs3"}
 
 	for _, name := range expected {
 		clusterset := filepath.Join(clustersetsDir, name)
-		mkdir(t, clusterset, 0777)
+		mkdir(t, clusterset, 0700)
 	}
 
 	s := core.NewConfigStorage(configDir)
