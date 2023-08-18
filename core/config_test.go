@@ -21,6 +21,13 @@ func mkdir(t *testing.T, path string, perm fs.FileMode) {
 	}
 }
 
+func mkfile(t *testing.T, path string, data []byte, perm fs.FileMode) {
+	err := os.WriteFile(path, data, perm)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestConfigNoConfigDir(t *testing.T) {
 	// ~/.config/kubectl-ramen/ does not exist.
 	configDir := filepath.Join(t.TempDir(), "missing")
@@ -47,24 +54,27 @@ func TestConfigSomeInvalidClusterSets(t *testing.T) {
 	clustersetsDir := filepath.Join(configDir, "clustersets")
 	mkdir(t, clustersetsDir, 0700)
 
-	expected := []string{"cs1", "cs2", "cs3"}
+	dirs := []string{"cs1", "cs2", "cs3"}
 
-	for _, name := range expected {
+	// Directories are considred as clusterset.
+	for _, name := range dirs {
 		clusterset := filepath.Join(clustersetsDir, name)
 		mkdir(t, clusterset, 0700)
 	}
 
+	// Anything else is ignored.
+	mkfile(t, filepath.Join(clustersetsDir, "file"), []byte("ignored"), 0600)
+
 	s := core.NewConfigStorage(configDir)
-	actual, err := s.ListClusterSets()
+	clustersets, err := s.ListClusterSets()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	sort.Strings(expected)
-	sort.Strings(actual)
+	sort.Strings(clustersets)
 
-	if !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("Expected %v, got %v", expected, actual)
+	if !reflect.DeepEqual(dirs, clustersets) {
+		t.Fatalf("Expected %v, got %v", dirs, clustersets)
 	}
 }
 
