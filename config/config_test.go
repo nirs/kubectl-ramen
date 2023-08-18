@@ -4,6 +4,7 @@
 package config_test
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -28,6 +29,30 @@ func mkfile(t *testing.T, path string, data []byte, perm fs.FileMode) {
 	}
 }
 
+func chmod(t *testing.T, path string, perm fs.FileMode) {
+	err := os.Chmod(path, perm)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func mkclustersets(t *testing.T, names ...string) string {
+	configDir := t.TempDir()
+
+	clustersetsDir := filepath.Join(configDir, "clustersets")
+	mkdir(t, clustersetsDir, 0700)
+
+	for _, name := range names {
+		dir := filepath.Join(clustersetsDir, name)
+		mkdir(t, dir, 0700)
+		config := filepath.Join(dir, "config.yaml")
+		data := fmt.Sprintf("name: %s", name)
+		mkfile(t, config, []byte(data), 0600)
+	}
+
+	return configDir
+}
+
 func TestConfigNoConfigDir(t *testing.T) {
 	// ~/.config/kubectl-ramen/ does not exist.
 	configDir := filepath.Join(t.TempDir(), "missing")
@@ -42,28 +67,18 @@ func TestConfigNoClustersetsDir(t *testing.T) {
 
 func TestConfigNoClusterSet(t *testing.T) {
 	// ~/.config/kubectl-ramen/clustersets is empty.
-	configDir := t.TempDir()
-	clustersetsDir := filepath.Join(configDir, "clustersets")
-	mkdir(t, clustersetsDir, 0700)
+	configDir := mkclustersets(t)
 	checkEmptyConfig(t, configDir)
 }
 
 func TestConfigSomeInvalidClusterSets(t *testing.T) {
-	// ~/.config/kubectl-ramen/clustersets contains some (invalid) clustersets.
-	configDir := t.TempDir()
-	clustersetsDir := filepath.Join(configDir, "clustersets")
-	mkdir(t, clustersetsDir, 0700)
-
+	// ~/.config/kubectl-ramen/clustersets contains some clustersets.
 	dirs := []string{"cs1", "cs2", "cs3"}
-
-	// Directories are considred as clusterset.
-	for _, name := range dirs {
-		clusterset := filepath.Join(clustersetsDir, name)
-		mkdir(t, clusterset, 0700)
-	}
+	configDir := mkclustersets(t, dirs...)
 
 	// Anything else is ignored.
-	mkfile(t, filepath.Join(clustersetsDir, "file"), []byte("ignored"), 0600)
+	file := filepath.Join(configDir, "clustersets", "file")
+	mkfile(t, file, []byte("ignored"), 0600)
 
 	s := config.NewStore(configDir)
 	clustersets, err := s.ListClusterSets()
@@ -80,9 +95,8 @@ func TestConfigSomeInvalidClusterSets(t *testing.T) {
 
 func TestConfigListError(t *testing.T) {
 	// ~/.config/kubctl-ramen/clustersets is not readable
-	configDir := t.TempDir()
-	clustersetsDir := filepath.Join(configDir, "clustersets")
-	mkdir(t, clustersetsDir, 0) // Not readble
+	configDir := mkclustersets(t)
+	chmod(t, filepath.Join(configDir, "clustersets"), 0)
 
 	s := config.NewStore(configDir)
 	_, err := s.ListClusterSets()
