@@ -129,3 +129,45 @@ func checkEmptyConfig(t *testing.T, path string) {
 		t.Fatalf("Expected empty clustersets, got %v", clustersets)
 	}
 }
+
+// Removing clustersets
+
+func TestConfigRemoveNoClustersetsDir(t *testing.T) {
+	configDir := t.TempDir()
+	s := config.NewStore(configDir)
+	err := s.RemoveClusterSet("missing")
+	if err != nil {
+		t.Fatal("Error removing with missing clustersets directory")
+	}
+}
+
+func TestConfigRemoveMissingClusterSet(t *testing.T) {
+	configDir := mkclustersets(t)
+	s := config.NewStore(configDir)
+	err := s.RemoveClusterSet("missing")
+	if err != nil {
+		t.Fatal("Error removing missing clusterset")
+	}
+}
+
+func TestConfigRemoveExisting(t *testing.T) {
+	configDir := mkclustersets(t, "c1", "c2", "c3")
+
+	s := config.NewStore(configDir)
+	err := s.RemoveClusterSet("c2")
+	if err != nil {
+		t.Fatal("Error removing missing clusterset")
+	}
+
+	clustersets, err := s.ListClusterSets()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := []string{"c1", "c3"}
+	sort.Strings(clustersets)
+
+	if !reflect.DeepEqual(expected, clustersets) {
+		t.Fatalf("Expected %v, got %v", expected, clustersets)
+	}
+}

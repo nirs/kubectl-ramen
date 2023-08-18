@@ -51,6 +51,12 @@ func (s *Store) ListClusterSets() ([]string, error) {
 
 	return clustersets, nil
 }
+
+func (s *Store) RemoveClusterSet(name string) error {
+	clustersetDir := filepath.Join(s.clustersetsDir(), name)
+	return os.RemoveAll(clustersetDir)
+}
+
 func (s *Store) clustersetsDir() string {
 	return filepath.Join(s.path, "clustersets")
 }
