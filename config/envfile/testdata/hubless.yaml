@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: The RamenDR authors
+# SPDX-License-Identifier: Apache-2.0
+
+---
+name: "hubless"
+
+ramen:
+  hub: null
+  clusters: [dr1, dr2]
+  topology: regional-dr
+
+templates:
+  - name: cluster
+    driver: "$vm"
+    container_runtime: containerd
+    memory: "2g"
+
+profiles:
+  - name: dr1
+    template: cluster
+  - name: dr2
+    template: cluster
