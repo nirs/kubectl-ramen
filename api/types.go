@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: The RamenDR authors
 // SPDX-License-Identifier: Apache-2.0
 
-package core
+package api
 
 import "k8s.io/client-go/kubernetes"
 
