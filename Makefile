@@ -1,12 +1,14 @@
 # SPDX-FileCopyrightText: The RamenDR authors
 # SPDX-License-Identifier: Apache-2.0
 
-PROG := kubectl-ramen
+# We can run as kubectl-ramen or oc-ramen.
+HOST := kubectl
 
+prog := $(HOST)-ramen
 cover := cover.out
-output := $(cover) $(PROG)
+output := $(cover) $(prog)
 
-all: $(PROG)
+all: $(prog)
 
 test: reuse quick-tests
 
@@ -19,8 +21,8 @@ cover:
 reuse:
 	reuse lint
 
-$(PROG):
-	go build -o $(PROG)
+$(prog):
+	go build -o $(prog)
 
 clean:
 	rm -f $(output)
