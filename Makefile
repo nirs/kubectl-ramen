@@ -8,7 +8,8 @@ prog := $(HOST)-ramen
 cover := cover.out
 output := $(cover) $(prog)
 
-all: $(prog)
+all:
+	go build -o $(prog)
 
 test: reuse quick-tests
 
@@ -20,9 +21,6 @@ cover:
 
 reuse:
 	reuse lint
-
-$(prog):
-	go build -o $(prog)
 
 clean:
 	rm -f $(output)
