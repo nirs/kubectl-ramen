@@ -56,6 +56,28 @@ kubectl ramen disable --clusterset rdr --namespace busybox-sample
 kubectl ramen undeploy --clusterset rdr
 ```
 
+## Build
+
+Build for `kubectl` (default):
+
+```shell
+make
+```
+
+Build for `oc`:
+
+```shell
+make HOST=oc
+```
+
+## Install
+
+Copy the executables to a directory in the PATH:
+
+```shell
+cp kubectl-ramen /usr/loca/bin
+```
+
 ## Status
 
 This is work in progress; only some commands are implemented.
