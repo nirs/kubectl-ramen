@@ -13,13 +13,13 @@ const (
 )
 
 type ClusterConfig struct {
-	Kubeconfig string `yaml:"kubeconfig"`
+	Kubeconfig string `json:"kubeconfig"`
 }
 
 type ClusterSetConfig struct {
-	Name     string                    `yaml:"name"`
-	Topology DRTopology                `yaml:"topology"`
-	Clusters map[string]*ClusterConfig `yaml:"clusters"`
+	Name     string                    `json:"name"`
+	Topology DRTopology                `json:"topology"`
+	Clusters map[string]*ClusterConfig `json:"clusters"`
 }
 
 type Cluster struct {
