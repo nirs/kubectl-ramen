@@ -5,7 +5,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/nirs/kubectl-ramen/config"
 	"github.com/spf13/cobra"
 )
 
@@ -18,8 +20,11 @@ var addEnvCmd = &cobra.Command{
 file (mostly useful for Ramen developers)`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if verbose {
-			fmt.Printf("Adding clusterset %q from %q\n", args[0], envFile)
+		store := config.DefaultStore()
+		err := store.AddClusterSetFromEnvFile(args[0], envFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Cannot add clusterset: %s\n", err)
+			os.Exit(1)
 		}
 	},
 }
