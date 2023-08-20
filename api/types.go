@@ -3,8 +3,6 @@
 
 package api
 
-import "k8s.io/client-go/kubernetes"
-
 type DRTopology string
 
 const (
@@ -12,25 +10,15 @@ const (
 	MetroDR    = DRTopology("metro-dr")
 )
 
-type ClusterConfig struct {
+type Cluster struct {
+	Name       string `json:"name"`
 	Kubeconfig string `json:"kubeconfig"`
 }
 
-type ClusterSetConfig struct {
-	Name     string                    `json:"name"`
-	Topology DRTopology                `json:"topology"`
-	Clusters map[string]*ClusterConfig `json:"clusters"`
-}
-
-type Cluster struct {
-	name   string
-	client *kubernetes.Interface
-}
-
 type ClusterSet struct {
-	name     string
-	topology DRTopology
-	hub      *Cluster
-	cluster1 *Cluster
-	cluster2 *Cluster
+	Name     string     `json:"name"`
+	Topology DRTopology `json:"topology"`
+	Hub      *Cluster   `json:"hub"`
+	Cluster1 *Cluster   `json:"cluster1"`
+	Cluster2 *Cluster   `json:"cluster2"`
 }
