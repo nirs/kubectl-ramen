@@ -12,8 +12,13 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/nirs/kubectl-ramen/api"
 	"github.com/nirs/kubectl-ramen/config"
+	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/yaml"
 )
+
+var kubeconfig = filepath.Join("envfile", "testdata", "minikube.kubeconfig")
 
 // Helpers for creating configurations
 
@@ -84,7 +89,7 @@ func TestConfigSomeInvalidClusterSets(t *testing.T) {
 	file := filepath.Join(configDir, "clustersets", "file")
 	mkfile(t, file, []byte("ignored"), 0600)
 
-	s := config.NewStore(configDir)
+	s := config.NewStore(configDir, kubeconfig)
 	clustersets, err := s.ListClusterSets()
 	if err != nil {
 		t.Fatal(err)
@@ -102,7 +107,7 @@ func TestConfigListError(t *testing.T) {
 	configDir := mkclustersets(t)
 	chmod(t, filepath.Join(configDir, "clustersets"), 0)
 
-	s := config.NewStore(configDir)
+	s := config.NewStore(configDir, kubeconfig)
 	_, err := s.ListClusterSets()
 	if err == nil {
 		t.Fatal("Expected permission error listing unreadable clustersets")
@@ -120,7 +125,7 @@ func TestConfigDefault(t *testing.T) {
 }
 
 func checkEmptyConfig(t *testing.T, path string) {
-	s := config.NewStore(path)
+	s := config.NewStore(path, kubeconfig)
 	clustersets, err := s.ListClusterSets()
 	if err != nil {
 		t.Fatal(err)
@@ -130,11 +135,91 @@ func checkEmptyConfig(t *testing.T, path string) {
 	}
 }
 
+// Adding clusterset from env file
+
+func TestConfigAddClusterSetFromEnvFile(t *testing.T) {
+	configDir := t.TempDir()
+	envFile := filepath.Join("envfile", "testdata", "e2e.yaml")
+
+	s := config.NewStore(configDir, kubeconfig)
+
+	err := s.AddClusterSetFromEnvFile("e2e", envFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	clusterset := loadClusterSet(t, configDir, "e2e")
+
+	checkClusterSet(t, clusterset, "e2e", api.RegionalDR)
+	checkCluster(t, clusterset.Hub, "hub")
+	checkCluster(t, clusterset.Cluster1, "dr1")
+	checkCluster(t, clusterset.Cluster2, "dr2")
+}
+
+func TestConfigAddClusterSetFromEnvFileHubless(t *testing.T) {
+	configDir := t.TempDir()
+	envFile := filepath.Join("envfile", "testdata", "hubless.yaml")
+
+	s := config.NewStore(configDir, kubeconfig)
+
+	err := s.AddClusterSetFromEnvFile("hubless", envFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	clusterset := loadClusterSet(t, configDir, "hubless")
+
+	checkClusterSet(t, clusterset, "hubless", api.RegionalDR)
+	if clusterset.Hub != nil {
+		t.Fatalf("Expected nil Hub, got %v", clusterset.Hub)
+	}
+	checkCluster(t, clusterset.Cluster1, "dr1")
+	checkCluster(t, clusterset.Cluster2, "dr2")
+}
+
+func loadClusterSet(t *testing.T, configDir string, name string) *api.ClusterSet {
+	config := filepath.Join(configDir, "clustersets", name, "config.yaml")
+	data, err := os.ReadFile(config)
+	if err != nil {
+		t.Fatalf("Error reading clusterset %q config: %s", name, err)
+	}
+
+	clusterset := api.ClusterSet{}
+	err = yaml.Unmarshal(data, &clusterset)
+	if err != nil {
+		t.Fatalf("Error parsing clusterset %q config: %s", name, err)
+	}
+
+	return &clusterset
+}
+
+func checkClusterSet(t *testing.T, clusterset *api.ClusterSet, name string, topology api.DRTopology) {
+	if clusterset.Name != name {
+		t.Fatalf("Expected clusterset name %q, got %q", name, clusterset.Name)
+	}
+	if clusterset.Topology != api.RegionalDR {
+		t.Fatalf("Expected clusterset topology %q, got %q", topology, clusterset.Topology)
+	}
+}
+
+func checkCluster(t *testing.T, cluster *api.Cluster, name string) {
+	if cluster.Name != name {
+		t.Fatalf("Expected cluster name %q, got %q", name, cluster.Name)
+	}
+	kubeconfig, err := clientcmd.LoadFromFile(cluster.Kubeconfig)
+	if err != nil {
+		t.Fatalf("Error loading cluster %q kubeconfig: %s", name, err)
+	}
+	if kubeconfig.CurrentContext != name {
+		t.Fatalf("Expected kubeconfig context %q, got %q", name, kubeconfig.CurrentContext)
+	}
+}
+
 // Removing clustersets
 
 func TestConfigRemoveNoClustersetsDir(t *testing.T) {
 	configDir := t.TempDir()
-	s := config.NewStore(configDir)
+	s := config.NewStore(configDir, kubeconfig)
 	err := s.RemoveClusterSet("missing")
 	if err != nil {
 		t.Fatal("Error removing with missing clustersets directory")
@@ -143,7 +228,7 @@ func TestConfigRemoveNoClustersetsDir(t *testing.T) {
 
 func TestConfigRemoveMissingClusterSet(t *testing.T) {
 	configDir := mkclustersets(t)
-	s := config.NewStore(configDir)
+	s := config.NewStore(configDir, kubeconfig)
 	err := s.RemoveClusterSet("missing")
 	if err != nil {
 		t.Fatal("Error removing missing clusterset")
@@ -153,7 +238,7 @@ func TestConfigRemoveMissingClusterSet(t *testing.T) {
 func TestConfigRemoveExisting(t *testing.T) {
 	configDir := mkclustersets(t, "c1", "c2", "c3")
 
-	s := config.NewStore(configDir)
+	s := config.NewStore(configDir, kubeconfig)
 	err := s.RemoveClusterSet("c2")
 	if err != nil {
 		t.Fatal("Error removing missing clusterset")
@@ -189,13 +274,31 @@ var invalidNames = []struct {
 
 func TestConfigRemoveInvalid(t *testing.T) {
 	configDir := mkclustersets(t)
-	s := config.NewStore(configDir)
+	s := config.NewStore(configDir, kubeconfig)
 
 	for _, n := range invalidNames {
 		t.Run(n.description, func(t *testing.T) {
 			err := s.RemoveClusterSet(n.value)
 			if err == nil {
 				t.Fatalf("Removing invalid name %q did not fail", n.value)
+			} else {
+				t.Logf("expected error: %s", err)
+			}
+		})
+	}
+}
+
+func TestConfigAddClusterSetFromEnvFileInvalid(t *testing.T) {
+	configDir := mkclustersets(t)
+	envFile := filepath.Join("envfile", "testdata", "e2e.yaml")
+
+	s := config.NewStore(configDir, kubeconfig)
+
+	for _, n := range invalidNames {
+		t.Run(n.description, func(t *testing.T) {
+			err := s.AddClusterSetFromEnvFile(n.value, envFile)
+			if err == nil {
+				t.Fatalf("Adding invalid name %q did not fail", n.value)
 			} else {
 				t.Logf("expected error: %s", err)
 			}

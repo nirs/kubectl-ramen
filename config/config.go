@@ -9,7 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/nirs/kubectl-ramen/api"
+	"github.com/nirs/kubectl-ramen/config/envfile"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api/latest"
 	"k8s.io/client-go/util/homedir"
+	"sigs.k8s.io/yaml"
 )
 
 func configDir() string {
@@ -18,17 +23,18 @@ func configDir() string {
 
 // Store stores and loads configurations.
 type Store struct {
-	path string
+	path       string
+	kubeconfig string
 }
 
-// DefaultStore return the deault configuration storage.
+// DefaultStore return the default configuration storage.
 func DefaultStore() *Store {
-	return NewStore(configDir())
+	return NewStore(configDir(), clientcmd.RecommendedHomeFile)
 }
 
 // NewStore return a new configuration storage using the specified path.
-func NewStore(path string) *Store {
-	return &Store{path: path}
+func NewStore(path string, kubeconfig string) *Store {
+	return &Store{path: path, kubeconfig: kubeconfig}
 }
 
 // ListClusterSets return slice of clusterset names. The result may contain
@@ -52,6 +58,133 @@ func (s *Store) ListClusterSets() ([]string, error) {
 	}
 
 	return clustersets, nil
+}
+
+// AddClusterSetFromEnvFile add a clusterset from ramen environment file.
+func (s *Store) AddClusterSetFromEnvFile(name string, path string) error {
+	if !s.isValidName(name) {
+		return fmt.Errorf("invalid clusterset name: %q", name)
+	}
+
+	env, err := envfile.Load(path)
+	if err != nil {
+		return err
+	}
+
+	dir := filepath.Join(s.clustersetsDir(), name)
+	clusterset := s.newClusterSetFromEnv(name, env, dir)
+
+	err = s.createClusterSetDir(dir)
+	if err != nil {
+		if os.IsExist(err) {
+			return fmt.Errorf("clusterset %q already exist", name)
+		}
+		return err
+	}
+
+	err = s.writeClusterSet(clusterset, dir)
+	if err != nil {
+		os.RemoveAll(dir)
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) newClusterSetFromEnv(name string, env *envfile.EnvFile, dir string) *api.ClusterSet {
+	clusterset := &api.ClusterSet{
+		Name:     name,
+		Topology: env.Ramen.Topology,
+		Cluster1: &api.Cluster{
+			Name:       env.Ramen.Clusters[0],
+			Kubeconfig: filepath.Join(dir, env.Ramen.Clusters[0]+".kubeconfig"),
+		},
+		Cluster2: &api.Cluster{
+			Name:       env.Ramen.Clusters[1],
+			Kubeconfig: filepath.Join(dir, env.Ramen.Clusters[1]+".kubeconfig"),
+		},
+	}
+
+	if env.Ramen.Hub != "" {
+		clusterset.Hub = &api.Cluster{
+			Name:       env.Ramen.Hub,
+			Kubeconfig: filepath.Join(dir, env.Ramen.Hub+".kubeconfig"),
+		}
+	}
+
+	return clusterset
+}
+
+func (s *Store) createClusterSetDir(path string) error {
+	err := os.MkdirAll(s.clustersetsDir(), 0700)
+	if err != nil {
+		return err
+	}
+
+	err = os.Mkdir(path, 0700)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) writeClusterSet(clusterset *api.ClusterSet, dir string) error {
+	if clusterset.Hub != nil {
+		err := s.copyKubeConfigFor(clusterset.Hub)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := s.copyKubeConfigFor(clusterset.Cluster1)
+	if err != nil {
+		return err
+	}
+
+	err = s.copyKubeConfigFor(clusterset.Cluster2)
+	if err != nil {
+		return err
+	}
+
+	data, err := yaml.Marshal(clusterset)
+	if err != nil {
+		return err
+	}
+
+	config := filepath.Join(dir, "config.yaml")
+	err = os.WriteFile(config, data, 0600)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) copyKubeConfigFor(cluster *api.Cluster) error {
+	kubeconfig, err := envfile.LoadKubeConfigFor(cluster.Name, s.kubeconfig)
+	if err != nil {
+		return err
+	}
+
+	// NOTE: Loading the config fails without the conversion. Not documented
+	// but kubectl does this.
+	converted, err := latest.Scheme.ConvertToVersion(kubeconfig, latest.ExternalVersion)
+	if err != nil {
+		return err
+	}
+
+	data, err := yaml.Marshal(converted)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(cluster.Kubeconfig, data, 0600)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Store) RemoveClusterSet(name string) error {
