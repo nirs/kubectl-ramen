@@ -15,7 +15,6 @@ import (
 	"github.com/nirs/kubectl-ramen/api"
 	"github.com/nirs/kubectl-ramen/config"
 	"k8s.io/client-go/tools/clientcmd"
-	"sigs.k8s.io/yaml"
 )
 
 var kubeconfig = filepath.Join("envfile", "testdata", "minikube.kubeconfig")
@@ -138,38 +137,44 @@ func checkEmptyConfig(t *testing.T, path string) {
 // Adding clusterset from env file
 
 func TestConfigAddClusterSetFromEnvFile(t *testing.T) {
-	configDir := t.TempDir()
-	envFile := filepath.Join("envfile", "testdata", "e2e.yaml")
+	const env = "e2e"
+	envFile := filepath.Join("envfile", "testdata", env+".yaml")
 
-	s := config.NewStore(configDir, kubeconfig)
+	s := config.NewStore(t.TempDir(), kubeconfig)
 
-	err := s.AddClusterSetFromEnvFile("e2e", envFile)
+	err := s.AddClusterSetFromEnvFile(env, envFile)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	clusterset := loadClusterSet(t, configDir, "e2e")
+	clusterset, err := s.GetClusterSet(env)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	checkClusterSet(t, clusterset, "e2e", api.RegionalDR)
+	checkClusterSet(t, clusterset, env, api.RegionalDR)
 	checkCluster(t, clusterset.Hub, "hub")
 	checkCluster(t, clusterset.Cluster1, "dr1")
 	checkCluster(t, clusterset.Cluster2, "dr2")
 }
 
 func TestConfigAddClusterSetFromEnvFileHubless(t *testing.T) {
-	configDir := t.TempDir()
-	envFile := filepath.Join("envfile", "testdata", "hubless.yaml")
+	const env = "hubless"
+	envFile := filepath.Join("envfile", "testdata", env+".yaml")
 
-	s := config.NewStore(configDir, kubeconfig)
+	s := config.NewStore(t.TempDir(), kubeconfig)
 
-	err := s.AddClusterSetFromEnvFile("hubless", envFile)
+	err := s.AddClusterSetFromEnvFile(env, envFile)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	clusterset := loadClusterSet(t, configDir, "hubless")
+	clusterset, err := s.GetClusterSet(env)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	checkClusterSet(t, clusterset, "hubless", api.RegionalDR)
+	checkClusterSet(t, clusterset, env, api.RegionalDR)
 	if clusterset.Hub != nil {
 		t.Fatalf("Expected nil Hub, got %v", clusterset.Hub)
 	}
@@ -177,21 +182,31 @@ func TestConfigAddClusterSetFromEnvFileHubless(t *testing.T) {
 	checkCluster(t, clusterset.Cluster2, "dr2")
 }
 
-func loadClusterSet(t *testing.T, configDir string, name string) *api.ClusterSet {
-	config := filepath.Join(configDir, "clustersets", name, "config.yaml")
-	data, err := os.ReadFile(config)
-	if err != nil {
-		t.Fatalf("Error reading clusterset %q config: %s", name, err)
-	}
+// Getting clustersets
 
-	clusterset := api.ClusterSet{}
-	err = yaml.Unmarshal(data, &clusterset)
-	if err != nil {
-		t.Fatalf("Error parsing clusterset %q config: %s", name, err)
+func TestConfigGetClusterSetNoClusterSetsDir(t *testing.T) {
+	s := config.NewStore(t.TempDir(), kubeconfig)
+	_, err := s.GetClusterSet("name")
+	if err == nil {
+		t.Fatal("Get non existing clusterset succeeded")
 	}
-
-	return &clusterset
 }
+
+func TestConfigGetClusterSetMissingClusterSet(t *testing.T) {
+	const env = "e2e"
+	envFile := filepath.Join("envfile", "testdata", env+".yaml")
+	s := config.NewStore(t.TempDir(), kubeconfig)
+	err := s.AddClusterSetFromEnvFile(env, envFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = s.GetClusterSet("name")
+	if err == nil {
+		t.Fatal("Get non existing clusterset succeeded")
+	}
+}
+
+// Verifying clustersets
 
 func checkClusterSet(t *testing.T, clusterset *api.ClusterSet, name string, topology api.DRTopology) {
 	if clusterset.Name != name {
@@ -297,6 +312,22 @@ func TestConfigAddClusterSetFromEnvFileInvalid(t *testing.T) {
 	for _, n := range invalidNames {
 		t.Run(n.description, func(t *testing.T) {
 			err := s.AddClusterSetFromEnvFile(n.value, envFile)
+			if err == nil {
+				t.Fatalf("Adding invalid name %q did not fail", n.value)
+			} else {
+				t.Logf("expected error: %s", err)
+			}
+		})
+	}
+}
+
+func TestConfiGetdClusterSetInvalid(t *testing.T) {
+	configDir := mkclustersets(t)
+	s := config.NewStore(configDir, kubeconfig)
+
+	for _, n := range invalidNames {
+		t.Run(n.description, func(t *testing.T) {
+			_, err := s.GetClusterSet(n.value)
 			if err == nil {
 				t.Fatalf("Adding invalid name %q did not fail", n.value)
 			} else {

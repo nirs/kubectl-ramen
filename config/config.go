@@ -187,6 +187,35 @@ func (s *Store) copyKubeConfigFor(cluster *api.Cluster) error {
 	return nil
 }
 
+func (s *Store) GetClusterSet(name string) (*api.ClusterSet, error) {
+	if !s.isValidName(name) {
+		return nil, fmt.Errorf("invalid clusterset name: %q", name)
+	}
+
+	dir := filepath.Join(s.clustersetsDir(), name)
+	_, err := os.Stat(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("clusterset %q does not exist", name)
+		}
+		return nil, err
+	}
+
+	config := filepath.Join(dir, "config.yaml")
+	data, err := os.ReadFile(config)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterset := api.ClusterSet{}
+	err = yaml.Unmarshal(data, &clusterset)
+	if err != nil {
+		return nil, err
+	}
+
+	return &clusterset, nil
+}
+
 func (s *Store) RemoveClusterSet(name string) error {
 	if !s.isValidName(name) {
 		return fmt.Errorf("invalid clusterset name: %q", name)
