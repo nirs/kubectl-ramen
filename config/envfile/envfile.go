@@ -24,7 +24,11 @@ type EnvFile struct {
 	Ramen *EnvInfo `json:"ramen"`
 }
 
-func Load(path string) (*EnvFile, error) {
+type Options struct {
+	NamePrefix string
+}
+
+func Load(path string, options Options) (*EnvFile, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -36,5 +40,19 @@ func Load(path string) (*EnvFile, error) {
 		return nil, err
 	}
 
+	if options.NamePrefix != "" {
+		prefixNames(env, options.NamePrefix)
+	}
+
 	return env, nil
+}
+
+func prefixNames(env *EnvFile, prefix string) {
+	env.Name = prefix + env.Name
+	if env.Ramen.Hub != "" {
+		env.Ramen.Hub = prefix + env.Ramen.Hub
+	}
+	for i, cluster := range env.Ramen.Clusters {
+		env.Ramen.Clusters[i] = prefix + cluster
+	}
 }
