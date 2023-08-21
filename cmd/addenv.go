@@ -4,8 +4,7 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
+	"log"
 
 	"github.com/nirs/kubectl-ramen/config"
 	"github.com/nirs/kubectl-ramen/config/drenv"
@@ -24,14 +23,12 @@ file (mostly useful for Ramen developers)`,
 	Run: func(cmd *cobra.Command, args []string) {
 		env, err := drenv.Load(envFile, drenv.Options{NamePrefix: namePrefix})
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Cannot load env file: %s\n", err)
-			os.Exit(1)
+			log.Fatalf("Cannot load env file: %s", err)
 		}
 		store := config.DefaultStore()
 		err = store.AddClusterSetFromEnv(args[0], env)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Cannot add clusterset: %s\n", err)
-			os.Exit(1)
+			log.Fatalf("Cannot add clusterset: %s", err)
 		}
 	},
 }

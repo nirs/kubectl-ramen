@@ -4,8 +4,7 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
+	"log"
 
 	"github.com/nirs/kubectl-ramen/config"
 	"github.com/spf13/cobra"
@@ -19,8 +18,7 @@ var removeCmd = &cobra.Command{
 		store := config.DefaultStore()
 		err := store.RemoveClusterSet(args[0])
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Cannot remove clusterset: %s\n", err)
-			os.Exit(1)
+			log.Fatalf("Cannot remove clusterset: %s", err)
 		}
 	},
 }
