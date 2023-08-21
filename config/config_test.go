@@ -14,6 +14,7 @@ import (
 
 	"github.com/nirs/kubectl-ramen/api"
 	"github.com/nirs/kubectl-ramen/config"
+	"github.com/nirs/kubectl-ramen/config/envfile"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -137,44 +138,56 @@ func checkEmptyConfig(t *testing.T, path string) {
 // Adding clusterset from env file
 
 func TestConfigAddClusterSetFromEnvFile(t *testing.T) {
-	const env = "e2e"
-	envFile := filepath.Join("envfile", "testdata", env+".yaml")
+	env := envfile.EnvFile{
+		Name: "e2e",
+		Ramen: &envfile.EnvInfo{
+			Hub:      "hub",
+			Clusters: []string{"dr1", "dr2"},
+			Topology: api.RegionalDR,
+		},
+	}
 
 	s := config.NewStore(t.TempDir(), kubeconfig)
 
-	err := s.AddClusterSetFromEnvFile(env, envFile)
+	err := s.AddClusterSetFromEnvFile(env.Name, &env)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	clusterset, err := s.GetClusterSet(env)
+	clusterset, err := s.GetClusterSet(env.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	checkClusterSet(t, clusterset, env, api.RegionalDR)
-	checkCluster(t, clusterset.Hub, "hub")
-	checkCluster(t, clusterset.Cluster1, "dr1")
-	checkCluster(t, clusterset.Cluster2, "dr2")
+	checkClusterSet(t, clusterset, env.Name, api.RegionalDR)
+	checkCluster(t, clusterset.Hub, env.Ramen.Hub)
+	checkCluster(t, clusterset.Cluster1, env.Ramen.Clusters[0])
+	checkCluster(t, clusterset.Cluster2, env.Ramen.Clusters[1])
 }
 
 func TestConfigAddClusterSetFromEnvFileHubless(t *testing.T) {
-	const env = "hubless"
-	envFile := filepath.Join("envfile", "testdata", env+".yaml")
+	env := envfile.EnvFile{
+		Name: "hubless",
+		Ramen: &envfile.EnvInfo{
+			Hub:      "",
+			Clusters: []string{"dr1", "dr2"},
+			Topology: api.RegionalDR,
+		},
+	}
 
 	s := config.NewStore(t.TempDir(), kubeconfig)
 
-	err := s.AddClusterSetFromEnvFile(env, envFile)
+	err := s.AddClusterSetFromEnvFile(env.Name, &env)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	clusterset, err := s.GetClusterSet(env)
+	clusterset, err := s.GetClusterSet(env.Name)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	checkClusterSet(t, clusterset, env, api.RegionalDR)
+	checkClusterSet(t, clusterset, env.Name, api.RegionalDR)
 	if clusterset.Hub != nil {
 		t.Fatalf("Expected nil Hub, got %v", clusterset.Hub)
 	}
@@ -193,10 +206,15 @@ func TestConfigGetClusterSetNoClusterSetsDir(t *testing.T) {
 }
 
 func TestConfigGetClusterSetMissingClusterSet(t *testing.T) {
-	const env = "e2e"
-	envFile := filepath.Join("envfile", "testdata", env+".yaml")
+	env := envfile.EnvFile{
+		Name: "e2e",
+		Ramen: &envfile.EnvInfo{
+			Hub:      "hub",
+			Clusters: []string{"dr1", "dr2"},
+		},
+	}
 	s := config.NewStore(t.TempDir(), kubeconfig)
-	err := s.AddClusterSetFromEnvFile(env, envFile)
+	err := s.AddClusterSetFromEnvFile(env.Name, &env)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,13 +323,12 @@ func TestConfigRemoveInvalid(t *testing.T) {
 
 func TestConfigAddClusterSetFromEnvFileInvalid(t *testing.T) {
 	configDir := mkclustersets(t)
-	envFile := filepath.Join("envfile", "testdata", "e2e.yaml")
 
 	s := config.NewStore(configDir, kubeconfig)
 
 	for _, n := range invalidNames {
 		t.Run(n.description, func(t *testing.T) {
-			err := s.AddClusterSetFromEnvFile(n.value, envFile)
+			err := s.AddClusterSetFromEnvFile(n.value, &envfile.EnvFile{})
 			if err == nil {
 				t.Fatalf("Adding invalid name %q did not fail", n.value)
 			} else {
