@@ -1,27 +1,27 @@
 // SPDX-FileCopyrightText: The RamenDR authors
 // SPDX-License-Identifier: Apache-2.0
 
-package envfile_test
+package drenv_test
 
 import (
 	"path/filepath"
 	"reflect"
 	"testing"
 
-	"github.com/nirs/kubectl-ramen/config/envfile"
+	"github.com/nirs/kubectl-ramen/config/drenv"
 )
 
-func TestConfigEnvfileLoadMissing(t *testing.T) {
+func TestConfigDrenvLoadMissing(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "no-such-env.yaml")
-	_, err := envfile.Load(missing, envfile.Options{})
+	_, err := drenv.Load(missing, drenv.Options{})
 	if err == nil {
 		t.Fatal("Loading missing envfile did not fail")
 	}
 }
 
-func TestConfigEnvfileLoadE2E(t *testing.T) {
+func TestConfigDrenvLoadE2E(t *testing.T) {
 	path := filepath.Join("testdata", "e2e.yaml")
-	env, err := envfile.Load(path, envfile.Options{})
+	env, err := drenv.Load(path, drenv.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,10 +39,10 @@ func TestConfigEnvfileLoadE2E(t *testing.T) {
 	}
 }
 
-func TestConfigEnvfileLoadE2ENamePrefix(t *testing.T) {
+func TestConfigDrenvLoadNamePrefix(t *testing.T) {
 	const namePrefix = "prefix-"
 	path := filepath.Join("testdata", "e2e.yaml")
-	env, err := envfile.Load(path, envfile.Options{NamePrefix: namePrefix})
+	env, err := drenv.Load(path, drenv.Options{NamePrefix: namePrefix})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,9 +60,9 @@ func TestConfigEnvfileLoadE2ENamePrefix(t *testing.T) {
 	}
 }
 
-func TestConfigEnvfileLoadHubless(t *testing.T) {
+func TestConfigDrenvLoadHubless(t *testing.T) {
 	path := filepath.Join("testdata", "hubless.yaml")
-	env, err := envfile.Load(path, envfile.Options{})
+	env, err := drenv.Load(path, drenv.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

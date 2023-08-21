@@ -14,11 +14,11 @@ import (
 
 	"github.com/nirs/kubectl-ramen/api"
 	"github.com/nirs/kubectl-ramen/config"
-	"github.com/nirs/kubectl-ramen/config/envfile"
+	"github.com/nirs/kubectl-ramen/config/drenv"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var kubeconfig = filepath.Join("envfile", "testdata", "minikube.kubeconfig")
+var kubeconfig = filepath.Join("drenv", "testdata", "minikube.kubeconfig")
 
 // Helpers for creating configurations
 
@@ -138,9 +138,9 @@ func checkEmptyConfig(t *testing.T, path string) {
 // Adding clusterset from env file
 
 func TestConfigAddClusterSetFromEnvFile(t *testing.T) {
-	env := envfile.EnvFile{
+	env := drenv.Environment{
 		Name: "e2e",
-		Ramen: &envfile.EnvInfo{
+		Ramen: &drenv.RamenInfo{
 			Hub:      "hub",
 			Clusters: []string{"dr1", "dr2"},
 			Topology: api.RegionalDR,
@@ -149,7 +149,7 @@ func TestConfigAddClusterSetFromEnvFile(t *testing.T) {
 
 	s := config.NewStore(t.TempDir(), kubeconfig)
 
-	err := s.AddClusterSetFromEnvFile(env.Name, &env)
+	err := s.AddClusterSetFromEnv(env.Name, &env)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,9 +166,9 @@ func TestConfigAddClusterSetFromEnvFile(t *testing.T) {
 }
 
 func TestConfigAddClusterSetFromEnvFileHubless(t *testing.T) {
-	env := envfile.EnvFile{
+	env := drenv.Environment{
 		Name: "hubless",
-		Ramen: &envfile.EnvInfo{
+		Ramen: &drenv.RamenInfo{
 			Hub:      "",
 			Clusters: []string{"dr1", "dr2"},
 			Topology: api.RegionalDR,
@@ -177,7 +177,7 @@ func TestConfigAddClusterSetFromEnvFileHubless(t *testing.T) {
 
 	s := config.NewStore(t.TempDir(), kubeconfig)
 
-	err := s.AddClusterSetFromEnvFile(env.Name, &env)
+	err := s.AddClusterSetFromEnv(env.Name, &env)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,15 +206,15 @@ func TestConfigGetClusterSetNoClusterSetsDir(t *testing.T) {
 }
 
 func TestConfigGetClusterSetMissingClusterSet(t *testing.T) {
-	env := envfile.EnvFile{
+	env := drenv.Environment{
 		Name: "e2e",
-		Ramen: &envfile.EnvInfo{
+		Ramen: &drenv.RamenInfo{
 			Hub:      "hub",
 			Clusters: []string{"dr1", "dr2"},
 		},
 	}
 	s := config.NewStore(t.TempDir(), kubeconfig)
-	err := s.AddClusterSetFromEnvFile(env.Name, &env)
+	err := s.AddClusterSetFromEnv(env.Name, &env)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -328,7 +328,7 @@ func TestConfigAddClusterSetFromEnvFileInvalid(t *testing.T) {
 
 	for _, n := range invalidNames {
 		t.Run(n.description, func(t *testing.T) {
-			err := s.AddClusterSetFromEnvFile(n.value, &envfile.EnvFile{})
+			err := s.AddClusterSetFromEnv(n.value, &drenv.Environment{})
 			if err == nil {
 				t.Fatalf("Adding invalid name %q did not fail", n.value)
 			} else {
