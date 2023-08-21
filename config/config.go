@@ -61,20 +61,15 @@ func (s *Store) ListClusterSets() ([]string, error) {
 }
 
 // AddClusterSetFromEnvFile add a clusterset from ramen environment file.
-func (s *Store) AddClusterSetFromEnvFile(name string, path string) error {
+func (s *Store) AddClusterSetFromEnvFile(name string, env *envfile.EnvFile) error {
 	if !s.isValidName(name) {
 		return fmt.Errorf("invalid clusterset name: %q", name)
-	}
-
-	env, err := envfile.Load(path, envfile.Options{})
-	if err != nil {
-		return err
 	}
 
 	dir := filepath.Join(s.clustersetsDir(), name)
 	clusterset := s.newClusterSetFromEnv(name, env, dir)
 
-	err = s.createClusterSetDir(dir)
+	err := s.createClusterSetDir(dir)
 	if err != nil {
 		if os.IsExist(err) {
 			return fmt.Errorf("clusterset %q already exist", name)
