@@ -1,13 +1,13 @@
 // SPDX-FileCopyrightText: The RamenDR authors
 // SPDX-License-Identifier: Apache-2.0
 
-package envfile_test
+package drenv_test
 
 import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nirs/kubectl-ramen/config/envfile"
+	"github.com/nirs/kubectl-ramen/config/drenv"
 )
 
 func TestConfigLoadKubeConfigFor(t *testing.T) {
@@ -15,7 +15,7 @@ func TestConfigLoadKubeConfigFor(t *testing.T) {
 
 	for _, name := range []string{"hub", "dr1", "dr2"} {
 		t.Run(name, func(t *testing.T) {
-			config, err := envfile.LoadKubeConfigFor(name, minikubeKubeconfig)
+			config, err := drenv.LoadKubeConfigFor(name, minikubeKubeconfig)
 			if err != nil {
 				t.Fatal(err)
 			}

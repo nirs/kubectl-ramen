@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: The RamenDR authors
 // SPDX-License-Identifier: Apache-2.0
 
-package envfile
+package drenv
 
 import (
 	"k8s.io/client-go/tools/clientcmd"

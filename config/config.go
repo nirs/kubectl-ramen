@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/nirs/kubectl-ramen/api"
-	"github.com/nirs/kubectl-ramen/config/envfile"
+	"github.com/nirs/kubectl-ramen/config/drenv"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api/latest"
 	"k8s.io/client-go/util/homedir"
@@ -60,8 +60,8 @@ func (s *Store) ListClusterSets() ([]string, error) {
 	return clustersets, nil
 }
 
-// AddClusterSetFromEnvFile add a clusterset from ramen environment file.
-func (s *Store) AddClusterSetFromEnvFile(name string, env *envfile.EnvFile) error {
+// AddClusterSetFromEnv add a clusterset from ramen test environment.
+func (s *Store) AddClusterSetFromEnv(name string, env *drenv.Environment) error {
 	if !s.isValidName(name) {
 		return fmt.Errorf("invalid clusterset name: %q", name)
 	}
@@ -86,7 +86,7 @@ func (s *Store) AddClusterSetFromEnvFile(name string, env *envfile.EnvFile) erro
 	return nil
 }
 
-func (s *Store) newClusterSetFromEnv(name string, env *envfile.EnvFile, dir string) *api.ClusterSet {
+func (s *Store) newClusterSetFromEnv(name string, env *drenv.Environment, dir string) *api.ClusterSet {
 	clusterset := &api.ClusterSet{
 		Name:     name,
 		Topology: env.Ramen.Topology,
@@ -157,7 +157,7 @@ func (s *Store) writeClusterSet(clusterset *api.ClusterSet, dir string) error {
 }
 
 func (s *Store) copyKubeConfigFor(cluster *api.Cluster) error {
-	kubeconfig, err := envfile.LoadKubeConfigFor(cluster.Name, s.kubeconfig)
+	kubeconfig, err := drenv.LoadKubeConfigFor(cluster.Name, s.kubeconfig)
 	if err != nil {
 		return err
 	}

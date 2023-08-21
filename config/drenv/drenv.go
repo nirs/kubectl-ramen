@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: The RamenDR authors
 // SPDX-License-Identifier: Apache-2.0
 
-package envfile
+package drenv
 
 import (
 	"os"
@@ -10,31 +10,31 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// EnvInfo describes the ramen environment. The hub and clusters names are
+// RamenInfo describes the ramen environment. The hub and clusters names are
 // context names stored in the home kubeconfig (~/.kube/config).
-type EnvInfo struct {
+type RamenInfo struct {
 	Hub      string         `json:"hub"`
 	Clusters []string       `json:"clusters"`
 	Topology api.DRTopology `json:"topology"`
 }
 
-// EnvFile is ramen testing environment file.
-type EnvFile struct {
-	Name  string   `json:"name"`
-	Ramen *EnvInfo `json:"ramen"`
+// Environment is ramen testing environment file.
+type Environment struct {
+	Name  string     `json:"name"`
+	Ramen *RamenInfo `json:"ramen"`
 }
 
 type Options struct {
 	NamePrefix string
 }
 
-func Load(path string, options Options) (*EnvFile, error) {
+func Load(path string, options Options) (*Environment, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	env := &EnvFile{}
+	env := &Environment{}
 	err = yaml.Unmarshal(data, env)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func Load(path string, options Options) (*EnvFile, error) {
 	return env, nil
 }
 
-func prefixNames(env *EnvFile, prefix string) {
+func prefixNames(env *Environment, prefix string) {
 	env.Name = prefix + env.Name
 	if env.Ramen.Hub != "" {
 		env.Ramen.Hub = prefix + env.Ramen.Hub
