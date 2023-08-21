@@ -66,7 +66,7 @@ func (s *Store) AddClusterSetFromEnvFile(name string, path string) error {
 		return fmt.Errorf("invalid clusterset name: %q", name)
 	}
 
-	env, err := envfile.Load(path)
+	env, err := envfile.Load(path, envfile.Options{})
 	if err != nil {
 		return err
 	}
