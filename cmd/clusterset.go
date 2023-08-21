@@ -5,7 +5,7 @@ package cmd
 
 import (
 	"fmt"
-	"os"
+	"log"
 
 	"github.com/nirs/kubectl-ramen/config"
 	"github.com/spf13/cobra"
@@ -22,8 +22,7 @@ that can be used later with the --clusterset option.`,
 
 		clustersets, err := store.ListClusterSets()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Cannot list clustersets: %s\n", err)
-			os.Exit(1)
+			log.Fatalf("Cannot list clustersets: %s", err)
 		}
 
 		for _, name := range clustersets {
