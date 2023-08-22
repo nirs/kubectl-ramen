@@ -12,7 +12,6 @@ import (
 	"github.com/nirs/kubectl-ramen/api"
 	"github.com/nirs/kubectl-ramen/config/drenv"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/clientcmd/api/latest"
 	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/yaml"
 )
@@ -157,29 +156,12 @@ func (s *Store) writeClusterSet(clusterset *api.ClusterSet, dir string) error {
 }
 
 func (s *Store) copyKubeConfigFor(cluster *api.Cluster) error {
-	kubeconfig, err := drenv.LoadKubeConfigFor(cluster.Name, s.kubeconfig)
+	config, err := drenv.LoadKubeConfigFor(cluster.Name, s.kubeconfig)
 	if err != nil {
 		return err
 	}
 
-	// NOTE: Loading the config fails without the conversion. Not documented
-	// but kubectl does this.
-	converted, err := latest.Scheme.ConvertToVersion(kubeconfig, latest.ExternalVersion)
-	if err != nil {
-		return err
-	}
-
-	data, err := yaml.Marshal(converted)
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile(cluster.Kubeconfig, data, 0600)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return clientcmd.WriteToFile(*config, cluster.Kubeconfig)
 }
 
 func (s *Store) GetClusterSet(name string) (*api.ClusterSet, error) {
