@@ -75,7 +75,7 @@ make HOST=oc
 Copy the executables to a directory in the PATH:
 
 ```shell
-cp kubectl-ramen /usr/loca/bin
+cp kubectl-ramen /usr/local/bin
 ```
 
 ## Status
