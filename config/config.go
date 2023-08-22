@@ -76,6 +76,12 @@ func (s *Store) AddClusterSetFromEnv(name string, env *drenv.Environment) error 
 		return err
 	}
 
+	err = s.copyClustersConfigs(clusterset, dir)
+	if err != nil {
+		os.RemoveAll(dir)
+		return err
+	}
+
 	err = s.writeClusterSet(clusterset, dir)
 	if err != nil {
 		os.RemoveAll(dir)
@@ -123,7 +129,7 @@ func (s *Store) createClusterSetDir(path string) error {
 	return nil
 }
 
-func (s *Store) writeClusterSet(clusterset *api.ClusterSet, dir string) error {
+func (s *Store) copyClustersConfigs(clusterset *api.ClusterSet, dir string) error {
 	if clusterset.Hub != nil {
 		err := s.copyKubeConfigFor(clusterset.Hub)
 		if err != nil {
@@ -141,6 +147,19 @@ func (s *Store) writeClusterSet(clusterset *api.ClusterSet, dir string) error {
 		return err
 	}
 
+	return nil
+}
+
+func (s *Store) copyKubeConfigFor(cluster *api.Cluster) error {
+	config, err := drenv.LoadKubeConfigFor(cluster.Name, s.kubeconfig)
+	if err != nil {
+		return err
+	}
+
+	return clientcmd.WriteToFile(*config, cluster.Kubeconfig)
+}
+
+func (s *Store) writeClusterSet(clusterset *api.ClusterSet, dir string) error {
 	data, err := yaml.Marshal(clusterset)
 	if err != nil {
 		return err
@@ -153,15 +172,6 @@ func (s *Store) writeClusterSet(clusterset *api.ClusterSet, dir string) error {
 	}
 
 	return nil
-}
-
-func (s *Store) copyKubeConfigFor(cluster *api.Cluster) error {
-	config, err := drenv.LoadKubeConfigFor(cluster.Name, s.kubeconfig)
-	if err != nil {
-		return err
-	}
-
-	return clientcmd.WriteToFile(*config, cluster.Kubeconfig)
 }
 
 func (s *Store) GetClusterSet(name string) (*api.ClusterSet, error) {
