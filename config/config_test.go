@@ -15,6 +15,7 @@ import (
 	"github.com/nirs/kubectl-ramen/api"
 	"github.com/nirs/kubectl-ramen/config"
 	"github.com/nirs/kubectl-ramen/config/drenv"
+	"github.com/nirs/kubectl-ramen/config/kube"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -195,6 +196,36 @@ func TestConfigAddClusterSetFromEnvFileHubless(t *testing.T) {
 	checkCluster(t, clusterset.Cluster2, "dr2")
 }
 
+// Adding clusterset from kubeconfigs.
+
+func TestConfigAddClusterSetFromConfigs(t *testing.T) {
+	configs, err := kube.NewConfigSet(
+		filepath.Join("kube", "testdata", "perf1.kubeconfig"),
+		filepath.Join("kube", "testdata", "perf2.kubeconfig"),
+		filepath.Join("kube", "testdata", "perf3.kubeconfig"),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s := config.NewStore(t.TempDir(), kubeconfig)
+
+	err = s.AddClusterSetFromConfigs("perf", configs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	clusterset, err := s.GetClusterSet("perf")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checkClusterSet(t, clusterset, "perf", "")
+	checkCluster(t, clusterset.Hub, "perf1")
+	checkCluster(t, clusterset.Cluster1, "perf2")
+	checkCluster(t, clusterset.Cluster2, "perf3")
+}
+
 // Getting clustersets
 
 func TestConfigGetClusterSetNoClusterSetsDir(t *testing.T) {
@@ -239,12 +270,9 @@ func checkCluster(t *testing.T, cluster *api.Cluster, name string) {
 	if cluster.Name != name {
 		t.Fatalf("Expected cluster name %q, got %q", name, cluster.Name)
 	}
-	kubeconfig, err := clientcmd.LoadFromFile(cluster.Kubeconfig)
+	_, err := clientcmd.LoadFromFile(cluster.Kubeconfig)
 	if err != nil {
 		t.Fatalf("Error loading cluster %q kubeconfig: %s", name, err)
-	}
-	if kubeconfig.CurrentContext != name {
-		t.Fatalf("Expected kubeconfig context %q, got %q", name, kubeconfig.CurrentContext)
 	}
 }
 
@@ -338,6 +366,30 @@ func TestConfigAddClusterSetFromEnvFileInvalid(t *testing.T) {
 	}
 }
 
+func TestConfigAdddClusterSetFromConfigsInvalid(t *testing.T) {
+	configs, err := kube.NewConfigSet(
+		filepath.Join("kube", "testdata", "perf1.kubeconfig"),
+		filepath.Join("kube", "testdata", "perf2.kubeconfig"),
+		filepath.Join("kube", "testdata", "perf3.kubeconfig"),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	configDir := mkclustersets(t)
+	s := config.NewStore(configDir, kubeconfig)
+
+	for _, n := range invalidNames {
+		t.Run(n.description, func(t *testing.T) {
+			err := s.AddClusterSetFromConfigs(n.value, configs)
+			if err == nil {
+				t.Fatalf("Adding invalid name %q did not fail", n.value)
+			} else {
+				t.Logf("expected error: %s", err)
+			}
+		})
+	}
+}
 func TestConfiGetdClusterSetInvalid(t *testing.T) {
 	configDir := mkclustersets(t)
 	s := config.NewStore(configDir, kubeconfig)

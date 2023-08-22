@@ -11,6 +11,7 @@ import (
 
 	"github.com/nirs/kubectl-ramen/api"
 	"github.com/nirs/kubectl-ramen/config/drenv"
+	"github.com/nirs/kubectl-ramen/config/kube"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"sigs.k8s.io/yaml"
@@ -91,6 +92,38 @@ func (s *Store) AddClusterSetFromEnv(name string, env *drenv.Environment) error 
 	return nil
 }
 
+// AddClusterSetFromEnv add a clusterset from kubeconfigs.
+func (s *Store) AddClusterSetFromConfigs(name string, configset *kube.ConfigSet) error {
+	if !s.isValidName(name) {
+		return fmt.Errorf("invalid clusterset name: %q", name)
+	}
+
+	dir := filepath.Join(s.clustersetsDir(), name)
+	clusterset := s.newClusterSetFromConfigs(name, configset, dir)
+
+	err := s.createClusterSetDir(dir)
+	if err != nil {
+		if os.IsExist(err) {
+			return fmt.Errorf("clusterset %q already exist", name)
+		}
+		return err
+	}
+
+	err = s.writeClustersConfigs(clusterset, configset)
+	if err != nil {
+		os.RemoveAll(dir)
+		return err
+	}
+
+	err = s.writeClusterSet(clusterset, dir)
+	if err != nil {
+		os.RemoveAll(dir)
+		return err
+	}
+
+	return nil
+}
+
 // Creating clusterset from drev environment.
 
 func (s *Store) newClusterSetFromEnv(name string, env *drenv.Environment, dir string) *api.ClusterSet {
@@ -145,6 +178,55 @@ func (s *Store) copyKubeConfigFor(cluster *api.Cluster) error {
 	}
 
 	return clientcmd.WriteToFile(*config, cluster.Kubeconfig)
+}
+
+// Creating clusterset from configs.
+
+func (s *Store) newClusterSetFromConfigs(name string, configs *kube.ConfigSet, dir string) *api.ClusterSet {
+	// With openshift clusters we get very long context names so we use the file
+	// name (without the extension) as the cluster name. This give the user easy
+	// to way to control the names. The real context name is available via
+	// config.CurrentContext if needed.
+	return &api.ClusterSet{
+		Name: name,
+		Hub: &api.Cluster{
+			Name:       splitName(configs.Hub.Filename),
+			Kubeconfig: filepath.Join(dir, configs.Hub.Filename),
+		},
+		Cluster1: &api.Cluster{
+			Name:       splitName(configs.Cluster1.Filename),
+			Kubeconfig: filepath.Join(dir, configs.Cluster1.Filename),
+		},
+		Cluster2: &api.Cluster{
+			Name:       splitName(configs.Cluster2.Filename),
+			Kubeconfig: filepath.Join(dir, configs.Cluster2.Filename),
+		},
+	}
+}
+
+func splitName(filename string) string {
+	pos := strings.LastIndex(filename, ".")
+	if pos == -1 {
+		return filename
+	}
+	return filename[:pos]
+}
+
+func (s *Store) writeClustersConfigs(clusterset *api.ClusterSet, configs *kube.ConfigSet) error {
+	var err error
+	err = clientcmd.WriteToFile(*configs.Hub.Config, clusterset.Hub.Kubeconfig)
+	if err != nil {
+		return err
+	}
+	err = clientcmd.WriteToFile(*configs.Cluster1.Config, clusterset.Cluster1.Kubeconfig)
+	if err != nil {
+		return err
+	}
+	err = clientcmd.WriteToFile(*configs.Cluster2.Config, clusterset.Cluster2.Kubeconfig)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Storing clusterset
