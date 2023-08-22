@@ -91,6 +91,8 @@ func (s *Store) AddClusterSetFromEnv(name string, env *drenv.Environment) error 
 	return nil
 }
 
+// Creating clusterset from drev environment.
+
 func (s *Store) newClusterSetFromEnv(name string, env *drenv.Environment, dir string) *api.ClusterSet {
 	clusterset := &api.ClusterSet{
 		Name:     name,
@@ -113,20 +115,6 @@ func (s *Store) newClusterSetFromEnv(name string, env *drenv.Environment, dir st
 	}
 
 	return clusterset
-}
-
-func (s *Store) createClusterSetDir(path string) error {
-	err := os.MkdirAll(s.clustersetsDir(), 0700)
-	if err != nil {
-		return err
-	}
-
-	err = os.Mkdir(path, 0700)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (s *Store) copyClustersConfigs(clusterset *api.ClusterSet, dir string) error {
@@ -157,6 +145,22 @@ func (s *Store) copyKubeConfigFor(cluster *api.Cluster) error {
 	}
 
 	return clientcmd.WriteToFile(*config, cluster.Kubeconfig)
+}
+
+// Storing clusterset
+
+func (s *Store) createClusterSetDir(path string) error {
+	err := os.MkdirAll(s.clustersetsDir(), 0700)
+	if err != nil {
+		return err
+	}
+
+	err = os.Mkdir(path, 0700)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Store) writeClusterSet(clusterset *api.ClusterSet, dir string) error {
