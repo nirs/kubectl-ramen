@@ -230,7 +230,7 @@ func checkClusterSet(t *testing.T, clusterset *api.ClusterSet, name string, topo
 	if clusterset.Name != name {
 		t.Fatalf("Expected clusterset name %q, got %q", name, clusterset.Name)
 	}
-	if clusterset.Topology != api.RegionalDR {
+	if clusterset.Topology != topology {
 		t.Fatalf("Expected clusterset topology %q, got %q", topology, clusterset.Topology)
 	}
 }
