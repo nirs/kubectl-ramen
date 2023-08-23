@@ -4,8 +4,10 @@
 package cmd
 
 import (
-	"fmt"
+	"log"
 
+	"github.com/nirs/kubectl-ramen/config"
+	"github.com/nirs/kubectl-ramen/config/kube"
 	"github.com/spf13/cobra"
 )
 
@@ -22,11 +24,14 @@ var addCfgCmd = &cobra.Command{
 created from the hub and the managed clusters`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if verbose {
-			fmt.Printf("Adding clusterset %q from kubeconfigs\n", args[0])
-			fmt.Printf("  hub: %q\n", hubKubeconfig)
-			fmt.Printf("  cluster1: %q\n", cluster1Kubeconfig)
-			fmt.Printf("  cluster2: %q\n", cluster2Kubeconfig)
+		configset, err := kube.NewConfigSet(hubKubeconfig, cluster1Kubeconfig, cluster2Kubeconfig)
+		if err != nil {
+			log.Fatalf("Canot load configs: %s", err)
+		}
+		store := config.DefaultStore()
+		err = store.AddClusterSetFromConfigs(args[0], configset)
+		if err != nil {
+			log.Fatalf("Cannot add clusterset: %s", err)
 		}
 	},
 }
