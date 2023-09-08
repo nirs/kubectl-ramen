@@ -78,6 +78,22 @@ Copy the executables to a directory in the PATH:
 cp kubectl-ramen /usr/local/bin
 ```
 
+To enable completions in kubectl, copy the completion helper script to a
+directory in the PATH
+
+```
+cp kubectl_complete-ramen /usr/local/bin
+```
+
+Example completion:
+
+```
+$ kubectl ramen clusterset [TAB]
+add-cfg  -- Add a clusterset from kubeconfigs files
+add-env  -- Add a clusterset from drenv environment file
+remove   -- Remove a clusterset
+```
+
 ## Status
 
 This is work in progress; only some commands are implemented.
