@@ -38,7 +38,9 @@ func init() {
 	addEnvCmd.Flags().SortFlags = false
 
 	addEnvCmd.Flags().StringVarP(&envFile, "env-file", "f", "", "drenv environment file")
-	addEnvCmd.MarkFlagRequired("env-file")
+	if err := addEnvCmd.MarkFlagRequired("env-file"); err != nil {
+		log.Fatal(err)
+	}
 
 	addEnvCmd.Flags().StringVar(&namePrefix, "name-prefix", "", "prefix cluster names")
 
