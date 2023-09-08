@@ -41,13 +41,19 @@ func init() {
 	addCfgCmd.Flags().SortFlags = false
 
 	addCfgCmd.Flags().StringVar(&hubKubeconfig, "hub", "", "hub kubeconfig file")
-	addCfgCmd.MarkFlagRequired("hub")
+	if err := addCfgCmd.MarkFlagRequired("hub"); err != nil {
+		log.Fatal(err)
+	}
 
 	addCfgCmd.Flags().StringVar(&cluster1Kubeconfig, "cluster1", "", "cluster1 kubeconfig file")
-	addCfgCmd.MarkFlagRequired("cluster1")
+	if err := addCfgCmd.MarkFlagRequired("cluster1"); err != nil {
+		log.Fatal(err)
+	}
 
 	addCfgCmd.Flags().StringVar(&cluster2Kubeconfig, "cluster2", "", "cluster2 kubeconfig file")
-	addCfgCmd.MarkFlagRequired("cluster2")
+	if err := addCfgCmd.MarkFlagRequired("cluster2"); err != nil {
+		log.Fatal(err)
+	}
 
 	clustersetCmd.AddCommand(addCfgCmd)
 }
