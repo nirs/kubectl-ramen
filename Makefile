@@ -11,7 +11,10 @@ output := $(cover) $(prog)
 all:
 	go build -o $(prog)
 
-test: reuse quick-tests
+test: reuse lint quick-tests
+
+lint:
+	golangci-lint run
 
 quick-tests:
 	go test -cover -coverprofile=$(cover) ./...
